@@ -11,7 +11,7 @@ export const Editor = () => {
     from: "/editor",
     select: (search) => search.group,
   });
-  const { addGroup, removeGroup } = storeActions();
+  const { addGroup, removeGroup, updateSingleItem } = storeActions();
   const originalContent = useOriginalContent();
   const finalContent = useFinalContent() || {};
   const groupeTitles = new Set(
@@ -34,7 +34,7 @@ export const Editor = () => {
 
   const onSelectSingleItem = (event: ChangeEvent<HTMLInputElement>) => {
     const { checked, name } = event.currentTarget;
-    console.log({ checked, name, groupedContents });
+    updateSingleItem(group, name, checked);
   };
 
   const onExport = () => {
@@ -92,16 +92,20 @@ export const Editor = () => {
           return (
             <div
               key={`${name}${url}`}
-              className="flex flex-row gap-4 p-2 hover:bg-slate-300 hover:cursor-pointer justify-between"
+              className="flex flex-row gap-4 p-2 hover:bg-slate-300 justify-between"
             >
-              <label htmlFor={name}>{name}</label>
+              <label className="grow" htmlFor={name}>
+                {name}
+              </label>
               <input
                 className="shrink-0"
                 type="checkbox"
                 id={name}
                 name={name}
                 checked={
-                  !!contentsFromGroup.find((c) => c.name === name) || false
+                  !!contentsFromGroup.find(
+                    (c) => c.name === name && c.checked,
+                  ) || false
                 }
                 onChange={onSelectSingleItem}
               />

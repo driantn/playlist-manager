@@ -1,8 +1,8 @@
-import { M3uPlaylist } from "@iptv/playlist";
+import { M3uChannel } from "@iptv/playlist";
 import { create } from "zustand";
 import { createJSONStorage, devtools, persist } from "zustand/middleware";
 
-type Contents = M3uPlaylist["channels"];
+type Contents = Array<M3uChannel & { checked: boolean }>;
 type StoreState = {
   originalContent?: Contents;
   finalContent?: Record<string, Contents>;
@@ -11,7 +11,7 @@ type StoreState = {
     setOriginalContent: (content: Contents) => void;
     addGroup: (group: string, content: Contents) => void;
     removeGroup: (group: string) => void;
-    // updateSingleItem: (group: string, value: boolean) => void;
+    updateSingleItem: (group: string, name: string, value: boolean) => void;
   };
 };
 
@@ -28,7 +28,12 @@ const store = create<StoreState>()(
         actions: {
           setOriginalContent: (content) => set({ originalContent: content }),
           addGroup: (group, content) =>
-            set({ finalContent: { ...get().finalContent, [group]: content } }),
+            set({
+              finalContent: {
+                ...get().finalContent,
+                [group]: content.map((c) => ({ ...c, checked: true })),
+              },
+            }),
           removeGroup: (group) => {
             const content = { ...get().finalContent };
             if (!content) return;
@@ -37,12 +42,21 @@ const store = create<StoreState>()(
 
             set({ finalContent: content });
           },
-          // TODO: make me work man
-          // updateSingleItem: (group, value) => {
-          //   const finalContent = { ...get().finalContent };
-          //   const groupContent = finalContent[group];
-          //   if (!groupContent) return;
-          // },
+          updateSingleItem: (group, name, value) => {
+            const finalContent = { ...get().finalContent };
+            const groupContent = finalContent[group];
+            if (!groupContent) return;
+
+            set({
+              finalContent: {
+                ...finalContent,
+                [group]: groupContent.map((c) => {
+                  if (c.name === name) return { ...c, checked: value };
+                  return c;
+                }),
+              },
+            });
+          },
         },
       }),
       {
