@@ -39,7 +39,9 @@ export const Editor = () => {
 
   const onExport = () => {
     const playlistObject = {
-      channels: Object.values(finalContent).flat(),
+      channels: Object.values(finalContent)
+        .flat()
+        .filter((c) => c.checked),
       headers: {},
     };
     const m3u = writeM3U(playlistObject);
