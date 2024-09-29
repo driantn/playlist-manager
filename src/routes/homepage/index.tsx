@@ -1,5 +1,5 @@
 import { ChangeEvent } from "react";
-import { storeActions, useOriginalContent } from "../../store";
+import { Contents, storeActions, useOriginalContent } from "../../store";
 import { parseM3U } from "@iptv/playlist";
 import { Navigate } from "@tanstack/react-router";
 
@@ -20,7 +20,7 @@ export const Homepage = () => {
     const initialContent = await getContentFromFile(m3uFile);
     const parsedContent = parseM3U(initialContent);
 
-    setOriginalContent(parsedContent.channels);
+    setOriginalContent(parsedContent.channels as Contents);
   };
 
   if (originalContent) return <Navigate to="/editor" search={{ group: "" }} />;

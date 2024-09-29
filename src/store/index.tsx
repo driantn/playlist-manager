@@ -2,7 +2,7 @@ import { M3uChannel } from "@iptv/playlist";
 import { create } from "zustand";
 import { createJSONStorage, devtools, persist } from "zustand/middleware";
 
-type Contents = Array<M3uChannel & { checked: boolean }>;
+export type Contents = Array<M3uChannel & { checked: boolean }>;
 type StoreState = {
   originalContent?: Contents;
   finalContent?: Record<string, Contents>;
