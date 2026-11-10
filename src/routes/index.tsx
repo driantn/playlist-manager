@@ -2,9 +2,9 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
+  lazyRouteComponent,
 } from "@tanstack/react-router";
 import { Homepage } from "./homepage";
-import { Editor } from "./editor";
 
 const rootRoute = createRootRoute();
 
@@ -14,7 +14,6 @@ const indexRoute = createRoute({
   component: Homepage,
 });
 
-// The router JSON-parses params, so a group named "2024" arrives as a number.
 const str = (v: unknown) => (v == null || v === "" ? undefined : String(v));
 
 const editorRoute = createRoute({
@@ -24,7 +23,7 @@ const editorRoute = createRoute({
     group: str(s.group),
     q: str(s.q),
   }),
-  component: Editor,
+  component: lazyRouteComponent(() => import("./editor"), "Editor"),
 });
 
 export const router = createRouter({

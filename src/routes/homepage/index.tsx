@@ -1,7 +1,7 @@
-import { FormEvent, useState } from "react";
-import { parseM3U } from "@iptv/playlist";
+import { useState } from "react";
 import { Navigate } from "@tanstack/react-router";
 import { storeActions, usePlaylist } from "../../store";
+import { parsePlaylist } from "../../playlist";
 
 const fetchText = async (url: string) => {
   let res: Response;
@@ -9,10 +9,13 @@ const fetchText = async (url: string) => {
     res = await fetch(url);
   } catch {
     throw new Error(
-      "Could not download. The server may block browser requests; download the file and load it above instead.",
+      "That link can't be opened from the browser. Download the file and open it here instead.",
     );
   }
-  if (!res.ok) throw new Error(`Download failed (${res.status})`);
+  if (!res.ok)
+    throw new Error(
+      `The link returned an error (${res.status}). Check the address and try again.`,
+    );
   return res.text();
 };
 
@@ -27,8 +30,9 @@ export const Homepage = () => {
     setError("");
     setLoading(true);
     try {
-      const parsed = parseM3U(await getText());
-      if (!parsed.channels.length) throw new Error("No channels found in this playlist");
+      const parsed = parsePlaylist(await getText());
+      if (!parsed.channels.length)
+        throw new Error("No channels found. Check that this is an M3U playlist.");
       load(parsed);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -37,54 +41,65 @@ export const Homepage = () => {
     }
   };
 
-  const onUrlSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    loadFrom(() => fetchText(url));
-  };
-
   if (playlist) return <Navigate to="/editor" />;
 
   return (
-    <div className="size-full flex flex-col items-center justify-center gap-6 p-4">
-      <h1 className="text-2xl font-semibold">Playlist manager</h1>
-      <label className="block">
-        <span className="sr-only">Choose a playlist file</span>
+    <main className="mx-auto flex min-h-dvh max-w-xl flex-col justify-center gap-8 p-6">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight">Trim your IPTV playlist</h1>
+        <p className="text-lg text-muted">
+          Open an M3U playlist, tick the channels you watch and export a smaller file for your
+          player. Everything stays in this browser.
+        </p>
+      </div>
+
+      <label className="relative flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-line bg-surface px-6 py-10 text-center focus-within:border-tuned hover:border-tuned">
+        <span className="btn-primary">{loading ? "Opening…" : "Open playlist file"}</span>
+        <span className="text-sm text-muted">or drop an .m3u or .m3u8 file here</span>
         <input
           type="file"
           accept=".m3u,.m3u8"
           disabled={loading}
           onChange={(e) => {
             const file = e.target.files?.[0];
-            e.target.value = ""; // lets the same file be picked again after an error
+            e.target.value = "";
             if (file) loadFrom(() => file.text());
           }}
-          className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold"
+          className="absolute inset-0 cursor-pointer opacity-0"
         />
       </label>
-      <span className="text-slate-500">or</span>
-      <form onSubmit={onUrlSubmit} className="flex w-full max-w-lg gap-2">
-        <input
-          type="url"
-          required
-          aria-label="Playlist URL"
-          placeholder="https://example.com/playlist.m3u"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          className="grow rounded-md border border-slate-300 p-2"
-        />
-        <button
-          disabled={loading}
-          className="rounded-md bg-slate-500 px-4 text-white disabled:opacity-50"
-        >
-          Load
-        </button>
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          loadFrom(() => fetchText(url));
+        }}
+        className="space-y-2"
+      >
+        <label htmlFor="playlist-url" className="text-sm font-semibold">
+          Or load it from a link
+        </label>
+        <div className="flex gap-2">
+          <input
+            id="playlist-url"
+            type="url"
+            required
+            placeholder="https://example.com/playlist.m3u"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            className="min-w-0 grow rounded-md border border-line bg-surface p-2"
+          />
+          <button type="submit" disabled={loading} className="btn-quiet">
+            Load link
+          </button>
+        </div>
       </form>
-      {loading && <p>Loading…</p>}
+
       {error && (
-        <p role="alert" className="max-w-lg text-center text-red-600">
+        <p role="alert" className="rounded-md bg-red-50 p-3 text-red-800">
           {error}
         </p>
       )}
-    </div>
+    </main>
   );
 };

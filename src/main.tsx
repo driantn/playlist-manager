@@ -11,7 +11,6 @@ declare module "@tanstack/react-router" {
   }
 }
 
-// Resolves even if IndexedDB fails, so the app still starts (just empty).
 useStore.persist.rehydrate().then(() =>
   ReactDOM.createRoot(document.getElementById("root")!).render(
     <StrictMode>

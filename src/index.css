@@ -1,15 +1,37 @@
 @import "tailwindcss";
 
+@theme {
+  --color-canvas: #f3f5f8;
+  --color-surface: #ffffff;
+  --color-ink: #18202b;
+  --color-muted: #5e6b7a;
+  --color-line: #dce1e8;
+  --color-tuned: #0e7c7b;
+  --color-tuned-tint: #e3f2f1;
+}
+
 @layer base {
-  body,
-  html,
-  #root {
-    @apply size-full;
+  body {
+    @apply bg-canvas text-ink antialiased;
   }
 
-  /* v4 dropped the pointer cursor on buttons */
-  button:not(:disabled),
-  [role="button"]:not(:disabled) {
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-tuned;
+  }
+
+  button:not(:disabled) {
     cursor: pointer;
   }
+}
+
+@utility btn {
+  @apply rounded-md px-3 py-2 text-sm font-semibold whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-40;
+}
+
+@utility btn-primary {
+  @apply btn bg-tuned text-white hover:bg-tuned/90;
+}
+
+@utility btn-quiet {
+  @apply btn border border-line bg-surface text-ink hover:bg-canvas;
 }

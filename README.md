@@ -6,7 +6,6 @@ Runs fully in the browser; the loaded playlist is kept in IndexedDB until you pr
 ```sh
 npm install
 npm run dev    # http://localhost:3000
-npm test       # logic tests (node:test)
 npm run build
 ```
 
