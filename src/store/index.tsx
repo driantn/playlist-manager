@@ -1,76 +1,43 @@
-import { M3uChannel } from "@iptv/playlist";
+import type { M3uPlaylist } from "@iptv/playlist";
+import { del, get, set as idbSet } from "idb-keyval";
 import { create } from "zustand";
-import { createJSONStorage, devtools, persist } from "zustand/middleware";
+import { devtools, persist } from "zustand/middleware";
+import { toggle } from "../playlist";
 
-export type Contents = Array<M3uChannel & { checked: boolean }>;
 type StoreState = {
-  originalContent?: Contents;
-  finalContent?: Record<string, Contents>;
-
+  playlist?: M3uPlaylist;
+  selected: Set<number>;
   actions: {
-    setOriginalContent: (content: Contents) => void;
-    addGroup: (group: string, content: Contents) => void;
-    removeGroup: (group: string) => void;
-    updateSingleItem: (group: string, name: string, value: boolean) => void;
+    load: (playlist: M3uPlaylist) => void;
+    setSelected: (ids: number[], on: boolean) => void;
+    reset: () => void;
   };
 };
 
-const INITIAL_STORE = {
-  originalContent: undefined,
-  finalContent: undefined,
-};
-
-const store = create<StoreState>()(
+export const useStore = create<StoreState>()(
   devtools(
     persist(
-      (set, get) => ({
-        ...INITIAL_STORE,
+      (set) => ({
+        selected: new Set(),
         actions: {
-          setOriginalContent: (content) => set({ originalContent: content }),
-          addGroup: (group, content) =>
-            set({
-              finalContent: {
-                ...get().finalContent,
-                [group]: content.map((c) => ({ ...c, checked: true })),
-              },
-            }),
-          removeGroup: (group) => {
-            const content = { ...get().finalContent };
-            if (!content) return;
-
-            delete content[group];
-
-            set({ finalContent: content });
-          },
-          updateSingleItem: (group, name, value) => {
-            const finalContent = { ...get().finalContent };
-            const groupContent = finalContent[group];
-            if (!groupContent) return;
-
-            set({
-              finalContent: {
-                ...finalContent,
-                [group]: groupContent.map((c) => {
-                  if (c.name === name) return { ...c, checked: value };
-                  return c;
-                }),
-              },
-            });
-          },
+          load: (playlist) => set({ playlist, selected: new Set() }),
+          setSelected: (ids, on) =>
+            set((s) => ({ selected: toggle(s.selected, ids, on) })),
+          reset: () => set({ playlist: undefined, selected: new Set() }),
         },
       }),
       {
         name: "m3u-editor",
-        storage: createJSONStorage(() => sessionStorage),
-        partialize: ({ originalContent, finalContent }) => ({
-          originalContent,
-          finalContent,
-        }),
+        // IndexedDB stores the Set as-is and has no 5MB cap like sessionStorage.
+        // shortcut: the whole playlist is rewritten on every toggle, store it under its own key if huge playlists lag.
+        storage: { getItem: async (k) => (await get(k)) ?? null, setItem: idbSet, removeItem: del },
+        partialize: ({ playlist, selected }) => ({ playlist, selected }),
+        skipHydration: true, // main.tsx rehydrates before the first render
       },
     ),
   ),
 );
 
-export const storeActions = () => store.getState().actions;
-export const useOriginalContent = () => store((state) => state.originalContent);
-export const useFinalContent = () => store((state) => state.finalContent);
+export const storeActions = () => useStore.getState().actions;
+export const usePlaylist = () => useStore((s) => s.playlist);
+export const useSelected = () => useStore((s) => s.selected);
